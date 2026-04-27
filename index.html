@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a56db">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="سجل الديون">
+<link rel="manifest" href="manifest.json">
+<title>سجل ديون الإنترنت</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #1a56db;
+    --primary-light: #3b82f6;
+    --primary-dark: #1e40af;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --bg: #f0f4ff;
+    --card: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --border: #e2e8f0;
+    --sidebar-bg: #1e293b;
+    --shadow: 0 4px 20px rgba(26,86,219,0.12);
+    --radius: 16px;
+    --font: 'Cairo', 'Tajawal', sans-serif;
+  }
+  .dark {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border: #334155;
+    --shadow: 0 4px 20px rgba(0,0,0,0.4);
+    --sidebar-bg: #0f172a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+    overflow-x: hidden;
+  }
+  /* ===== SPLASH ===== */
+  #splash {
+    position: fixed; inset: 0;
+    background: linear-gradient(135deg, #1a56db 0%, #1e40af 50%, #0f172a 100%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 9999; transition: opacity 0.5s;
+  }
+  #splash .logo { font-size: 72px; margin-bottom: 16px; animation: pulse 1.5s infinite; }
+  #splash h1 { color: white; font-size: 28px; font-weight: 900; margin-bottom: 8px; }
+  #splash p { color: rgba(255,255,255,0.7); font-size: 14px; }
+  #splash .loader {
+    width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.3);
+    border-top-color: white; border-radius: 50%;
+    animation: spin 1s linear infinite; margin-top: 40px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+
+  /* ===== AUTH ===== */
+  #authScreen {
+    position: fixed; inset: 0;
+    background: linear-gradient(160deg, #1a56db 0%, #0f172a 100%);
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 24px; z-index: 999;
+  }
+  .auth-card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 24px;
+    padding: 32px 24px;
+    width: 100%; max-width: 380px;
+  }
+  .auth-logo { text-align: center; margin-bottom: 24px; }
+  .auth-logo .icon { font-size: 52px; }
+  .auth-logo h2 { color: white; font-size: 22px; font-weight: 900; margin-top: 8px; }
+  .auth-logo p { color: rgba(255,255,255,0.6); font-size: 13px; margin-top: 4px; }
+  .auth-tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+  .auth-tab {
+    flex: 1; padding: 10px; border: none;
+    background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);
+    border-radius: 10px; font-family: var(--font); font-size: 14px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .auth-tab.active { background: var(--primary-light); color: white; font-weight: 700; }
+  .auth-input {
+    width: 100%; padding: 13px 16px; margin-bottom: 12px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px; color: white;
+    font-family: var(--font); font-size: 15px;
+    outline: none; direction: auto;
+  }
+  .auth-input::placeholder { color: rgba(255,255,255,0.4); }
+  .auth-input:focus { border-color: var(--primary-light); background: rgba(255,255,255,0.15); }
+  .auth-btn {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, #3b82f6, #1a56db);
+    color: white; border: none; border-radius: 12px;
+    font-family: var(--font); font-size: 16px; font-weight: 700;
+    cursor: pointer; margin-top: 8px; transition: transform 0.2s, opacity 0.2s;
+  }
+  .auth-btn:active { transform: scale(0.97); }
+  .auth-divider { text-align: center; color: rgba(255,255,255,0.4); margin: 16px 0; font-size: 13px; }
+  .auth-guest {
+    width: 100%; padding: 12px;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px; font-family: var(--font); font-size: 14px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .auth-error { color: #fca5a5; font-size: 13px; text-align: center; margin-top: 8px; display: none; }
+
+  /* ===== MAIN APP ===== */
+  #app { display: none; }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    padding: 16px 20px; display: flex;
+    align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 4px 20px rgba(26,86,219,0.3);
+  }
+  .header-title { color: white; font-size: 20px; font-weight: 900; }
+  .header-actions { display: flex; gap: 12px; align-items: center; }
+  .header-btn {
+    background: rgba(255,255,255,0.15); border: none;
+    color: white; width: 38px; height: 38px;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 18px; transition: background 0.2s;
+  }
+  .header-btn:active { background: rgba(255,255,255,0.3); }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 200;
+    display: none; backdrop-filter: blur(4px);
+  }
+  .sidebar {
+    position: fixed; top: 0; right: -280px;
+    width: 280px; height: 100%;
+    background: var(--sidebar-bg);
+    z-index: 201; transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
+    display: flex; flex-direction: column;
+    box-shadow: -8px 0 40px rgba(0,0,0,0.4);
+  }
+  .sidebar.open { right: 0; }
+  .sidebar-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    padding: 40px 20px 24px;
+  }
+  .sidebar-user { display: flex; align-items: center; gap: 14px; }
+  .sidebar-avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; color: white; font-weight: 700;
+    border: 3px solid rgba(255,255,255,0.4);
+  }
+  .sidebar-name { color: white; font-size: 16px; font-weight: 700; }
+  .sidebar-email { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 2px; }
+  .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+  .nav-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; border-radius: 12px;
+    color: rgba(255,255,255,0.7); cursor: pointer;
+    transition: all 0.2s; margin-bottom: 4px; font-size: 15px;
+  }
+  .nav-item:hover, .nav-item.active {
+    background: rgba(59,130,246,0.2); color: white;
+  }
+  .nav-item.active { background: var(--primary); color: white; font-weight: 700; }
+  .nav-icon { font-size: 20px; width: 24px; text-align: center; }
+  .sidebar-footer {
+    padding: 16px; border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .logout-btn {
+    width: 100%; padding: 12px; border: 1px solid rgba(239,68,68,0.4);
+    background: rgba(239,68,68,0.1); color: #fca5a5;
+    border-radius: 10px; font-family: var(--font); font-size: 14px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .logout-btn:hover { background: rgba(239,68,68,0.2); }
+
+  /* ===== PAGES ===== */
+  .page { display: none; padding-bottom: 90px; }
+  .page.active { display: block; }
+
+  /* ===== HOME PAGE ===== */
+  .gauge-section {
+    background: var(--card);
+    margin: 16px; border-radius: var(--radius);
+    padding: 20px; box-shadow: var(--shadow);
+  }
+  .gauge-title {
+    font-size: 14px; font-weight: 700; color: var(--text);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .gauge-container { position: relative; width: 100%; padding-top: 8px; }
+  .gauge-wrapper { position: relative; width: 220px; height: 120px; margin: 0 auto; }
+  .gauge-svg { width: 100%; }
+  .gauge-center-text {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    text-align: center; line-height: 1.3;
+  }
+  .gauge-percent { font-size: 22px; font-weight: 900; color: var(--primary); }
+  .gauge-label { font-size: 10px; color: var(--text-secondary); }
+
+  .gauge-legend {
+    display: flex; justify-content: center; gap: 16px;
+    margin-top: 16px; flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* Subscription type gauges */
+  .sub-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+  .sub-gauge-card {
+    background: var(--bg); border-radius: 12px; padding: 12px;
+    text-align: center;
+  }
+  .sub-gauge-name { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600; }
+  .sub-gauge-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .sub-gauge-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .sub-gauge-val { font-size: 13px; font-weight: 700; margin-top: 6px; }
+
+  /* Stats cards */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 16px 16px; }
+  .stat-card {
+    background: var(--card); border-radius: var(--radius);
+    padding: 18px 16px; box-shadow: var(--shadow);
+    position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content: ''; position: absolute;
+    top: -20px; left: -20px;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    opacity: 0.08;
+  }
+  .stat-icon { font-size: 28px; margin-bottom: 10px; }
+  .stat-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 900; color: var(--text); }
+  .stat-sub { font-size: 11px; color: var(--text-secondary); margin-top: 6px; }
+  .stat-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; margin-top: 4px; }
+
+  /* Alerts */
+  .alerts-section { margin: 0 16px 16px; }
+  .alert-item {
+    background: var(--card); border-radius: 12px;
+    padding: 14px 16px; display: flex;
+    align-items: flex-start; gap: 12px;
+    margin-bottom: 10px; box-shadow: var(--shadow);
+    border-right: 4px solid var(--warning);
+  }
+  .alert-icon { font-size: 20px; flex-shrink: 0; }
+  .alert-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .alert-time { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+
+  /* ===== CLIENTS LIST ===== */
+  .search-bar-wrap { padding: 16px 16px 8px; }
+  .search-bar {
+    width: 100%; padding: 12px 16px 12px 44px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; font-family: var(--font); font-size: 14px;
+    color: var(--text); outline: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%2364748b' viewBox='0 0 24 24'%3E%3Cpath d='M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 14px center;
+    background-size: 18px;
+    direction: rtl;
+  }
+  .filter-chips { display: flex; gap: 8px; padding: 0 16px 12px; overflow-x: auto; }
+  .chip {
+    padding: 6px 14px; border-radius: 20px;
+    border: 1px solid var(--border); background: var(--card);
+    color: var(--text-secondary); font-size: 12px; white-space: nowrap;
+    cursor: pointer; font-family: var(--font); transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+  .client-list { padding: 0 16px; }
+  .client-card {
+    background: var(--card); border-radius: var(--radius);
+    padding: 16px; margin-bottom: 12px;
+    box-shadow: var(--shadow); cursor: pointer;
+    display: flex; align-items: center; gap: 14px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative; overflow: hidden;
+  }
+  .client-card:active { transform: scale(0.98); }
+  .client-avatar {
+    width: 50px; height: 50px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700; color: white;
+    flex-shrink: 0; position: relative;
+  }
+  .client-status-dot {
+    position: absolute; bottom: 2px; right: 2px;
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 2px solid var(--card);
+  }
+  .client-info { flex: 1; min-width: 0; }
+  .client-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+  .client-phone { font-size: 12px; color: var(--text-secondary); direction: ltr; text-align: right; }
+  .client-meta { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .client-tag {
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 10px; font-weight: 600;
+  }
+  .client-amount { text-align: left; flex-shrink: 0; }
+  .client-debt { font-size: 16px; font-weight: 900; }
+  .client-debt-label { font-size: 10px; color: var(--text-secondary); text-align: center; }
+
+  /* Sub type colors */
+  .eco { background: #dcfce7; color: #16a34a; }
+  .plus { background: #dbeafe; color: #1d4ed8; }
+  .standard { background: #fef3c7; color: #92400e; }
+  .wasil { background: #f3e8ff; color: #6b21a8; }
+  .eco-dot { background: #16a34a; }
+  .plus-dot { background: #1d4ed8; }
+  .standard-dot { background: #f59e0b; }
+  .wasil-dot { background: #7c3aed; }
+  .paid-dot { background: #10b981; }
+  .due-dot { background: #ef4444; }
+
+  /* FAB */
+  .fab {
+    position: fixed; bottom: 85px; left: 20px;
+    width: 58px; height: 58px;
+    background: linear-gradient(135deg, #3b82f6, #1a56db);
+    border-radius: 50%; border: none;
+    color: white; font-size: 26px;
+    box-shadow: 0 8px 24px rgba(26,86,219,0.5);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 50;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .fab:active { transform: scale(0.9); }
+
+  /* ===== BOTTOM NAV ===== */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--card); border-top: 1px solid var(--border);
+    display: flex; padding: 8px 0 20px;
+    z-index: 100; box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+    padding: 6px 0; cursor: pointer; border: none;
+    background: none; color: var(--text-secondary);
+    font-family: var(--font); font-size: 10px;
+    transition: color 0.2s;
+  }
+  .nav-btn .nav-icon-b { font-size: 22px; }
+  .nav-btn.active { color: var(--primary); }
+  .nav-btn.active .nav-icon-b { transform: scale(1.1); }
+
+  /* ===== CLIENT PROFILE ===== */
+  #profilePage {
+    position: fixed; inset: 0;
+    background: var(--bg); z-index: 150;
+    display: none; flex-direction: column;
+    overflow-y: auto;
+  }
+  #profilePage.open { display: flex; }
+  .profile-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    padding: 20px; position: relative;
+  }
+  .profile-back {
+    background: rgba(255,255,255,0.15); border: none;
+    color: white; width: 38px; height: 38px;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 20px; margin-bottom: 20px;
+  }
+  .profile-user-info { display: flex; align-items: center; gap: 16px; }
+  .profile-avatar {
+    width: 70px; height: 70px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 700; color: white;
+    border: 4px solid rgba(255,255,255,0.4);
+    flex-shrink: 0;
+  }
+  .profile-name { color: white; font-size: 20px; font-weight: 900; }
+  .profile-phone { color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 4px; direction: ltr; }
+  .profile-sub-tag {
+    display: inline-block; padding: 4px 12px;
+    border-radius: 20px; font-size: 12px; font-weight: 700;
+    background: rgba(255,255,255,0.2); color: white;
+    margin-top: 8px;
+  }
+  .profile-actions {
+    display: flex; gap: 10px; padding: 16px;
+    background: var(--card); border-bottom: 1px solid var(--border);
+  }
+  .profile-action-btn {
+    flex: 1; padding: 12px 8px; border-radius: 12px;
+    border: none; font-family: var(--font); font-size: 13px;
+    font-weight: 600; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; gap: 6px;
+    transition: transform 0.15s;
+  }
+  .profile-action-btn:active { transform: scale(0.95); }
+  .btn-call { background: #dcfce7; color: #16a34a; }
+  .btn-whatsapp { background: #25D366; color: white; }
+  .btn-edit { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+
+  .profile-body { padding: 16px; flex: 1; }
+  .section-title {
+    font-size: 14px; font-weight: 700; color: var(--text);
+    margin-bottom: 12px; display: flex; align-items: center;
+    justify-content: space-between;
+  }
+  .transactions-table {
+    background: var(--card); border-radius: var(--radius);
+    overflow: hidden; box-shadow: var(--shadow); margin-bottom: 16px;
+  }
+  .table-header {
+    display: grid; grid-template-columns: 2fr 1.2fr 1.2fr 1.5fr 1.2fr;
+    padding: 10px 14px;
+    background: var(--bg); border-bottom: 1px solid var(--border);
+  }
+  .table-header span, .table-row span {
+    font-size: 11px; font-weight: 600; color: var(--text-secondary);
+    text-align: center;
+  }
+  .table-header span:first-child, .table-row span:first-child { text-align: right; }
+  .table-row {
+    display: grid; grid-template-columns: 2fr 1.2fr 1.2fr 1.5fr 1.2fr;
+    padding: 12px 14px; border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+  .table-row:last-child { border-bottom: none; }
+  .table-row span { font-size: 12px; color: var(--text); text-align: center; }
+  .table-row span:first-child { text-align: right; font-weight: 600; }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  }
+  .status-paid { background: #dcfce7; color: #16a34a; }
+  .status-due { background: #fee2e2; color: #dc2626; }
+
+  .total-debt-box {
+    background: #fff0f0; border: 2px solid #fca5a5;
+    border-radius: var(--radius); padding: 16px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+  }
+  .dark .total-debt-box { background: #3f0000; border-color: #7f1d1d; }
+  .total-debt-label { font-size: 14px; font-weight: 700; color: var(--danger); }
+  .total-debt-value { font-size: 24px; font-weight: 900; color: var(--danger); }
+  .total-debt-currency { font-size: 12px; color: var(--text-secondary); }
+
+  /* Add transaction form */
+  .add-trans-section {
+    background: var(--card); border-radius: var(--radius);
+    padding: 16px; box-shadow: var(--shadow); margin-bottom: 16px;
+  }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block; }
+  .form-select, .form-input {
+    width: 100%; padding: 11px 14px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text);
+    font-family: var(--font); font-size: 14px;
+    outline: none; margin-bottom: 12px;
+    -webkit-appearance: none;
+  }
+  .form-select:focus, .form-input:focus { border-color: var(--primary); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+  .btn-paid {
+    padding: 13px; background: var(--success); color: white;
+    border: none; border-radius: 12px; font-family: var(--font);
+    font-size: 14px; font-weight: 700; cursor: pointer; transition: transform 0.15s;
+  }
+  .btn-due {
+    padding: 13px; background: var(--danger); color: white;
+    border: none; border-radius: 12px; font-family: var(--font);
+    font-size: 14px; font-weight: 700; cursor: pointer; transition: transform 0.15s;
+  }
+  .btn-paid:active, .btn-due:active { transform: scale(0.96); }
+
+  /* ===== SETTINGS ===== */
+  .settings-section {
+    background: var(--card); border-radius: var(--radius);
+    margin: 16px; box-shadow: var(--shadow); overflow: hidden;
+  }
+  .settings-item {
+    display: flex; align-items: center;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    justify-content: space-between;
+  }
+  .settings-item:last-child { border-bottom: none; }
+  .settings-item-label { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 500; }
+  .toggle {
+    width: 52px; height: 28px; background: var(--border);
+    border-radius: 14px; position: relative; cursor: pointer;
+    transition: background 0.3s; flex-shrink: 0;
+  }
+  .toggle.on { background: var(--primary); }
+  .toggle::after {
+    content: ''; position: absolute;
+    top: 3px; right: 3px;
+    width: 22px; height: 22px;
+    background: white; border-radius: 50%;
+    transition: transform 0.3s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  .toggle.on::after { transform: translateX(-24px); }
+  .danger-btn {
+    width: calc(100% - 32px); margin: 16px;
+    padding: 15px; background: none;
+    border: 2px solid var(--danger); border-radius: var(--radius);
+    color: var(--danger); font-family: var(--font);
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; display: flex;
+    align-items: center; justify-content: center; gap: 8px;
+  }
+  .danger-btn:hover { background: rgba(239,68,68,0.08); }
+
+  /* Language switch */
+  .lang-selector { display: flex; gap: 8px; }
+  .lang-btn {
+    padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: none; color: var(--text-secondary); cursor: pointer;
+    font-family: var(--font); font-size: 13px; transition: all 0.2s;
+  }
+  .lang-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+  /* ===== ADD CLIENT MODAL ===== */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 300;
+    display: none; align-items: flex-end;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-sheet {
+    background: var(--card); border-radius: 24px 24px 0 0;
+    padding: 24px; width: 100%;
+    animation: slideUp 0.3s ease;
+    max-height: 85vh; overflow-y: auto;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle {
+    width: 40px; height: 4px; background: var(--border);
+    border-radius: 2px; margin: 0 auto 20px;
+  }
+  .modal-title { font-size: 18px; font-weight: 900; margin-bottom: 20px; color: var(--text); }
+  .submit-btn {
+    width: 100%; padding: 15px;
+    background: linear-gradient(135deg, #3b82f6, #1a56db);
+    color: white; border: none; border-radius: 12px;
+    font-family: var(--font); font-size: 16px; font-weight: 700;
+    cursor: pointer; margin-top: 8px; transition: transform 0.2s;
+  }
+  .submit-btn:active { transform: scale(0.97); }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+    background: #1e293b; color: white;
+    padding: 12px 24px; border-radius: 12px;
+    font-size: 14px; z-index: 999;
+    opacity: 0; transition: opacity 0.3s;
+    pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center; padding: 60px 20px;
+    color: var(--text-secondary);
+  }
+  .empty-state .icon { font-size: 56px; margin-bottom: 16px; opacity: 0.5; }
+  .empty-state p { font-size: 15px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="logo">📡</div>
+  <h1 id="splashTitle">سجل ديون الإنترنت</h1>
+  <p id="splashSub">إدارة ذكية لسجلات العملاء</p>
+  <div class="loader"></div>
+</div>
+
+<!-- AUTH -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="icon">📡</div>
+      <h2 id="authTitle">سجل الديون</h2>
+      <p id="authSub">إدارة اشتراكات الإنترنت</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="loginTab" onclick="switchTab('login')">تسجيل الدخول</button>
+      <button class="auth-tab" id="registerTab" onclick="switchTab('register')">إنشاء حساب</button>
+    </div>
+    <div id="loginForm">
+      <input class="auth-input" type="email" id="loginEmail" placeholder="البريد الإلكتروني">
+      <input class="auth-input" type="password" id="loginPassword" placeholder="كلمة المرور">
+      <button class="auth-btn" onclick="login()">تسجيل الدخول</button>
+    </div>
+    <div id="registerForm" style="display:none">
+      <input class="auth-input" type="text" id="regName" placeholder="الاسم الكامل">
+      <input class="auth-input" type="email" id="regEmail" placeholder="البريد الإلكتروني">
+      <input class="auth-input" type="password" id="regPassword" placeholder="كلمة المرور">
+      <button class="auth-btn" onclick="register()">إنشاء الحساب</button>
+    </div>
+    <p class="auth-error" id="authError"></p>
+    <div class="auth-divider">أو</div>
+    <button class="auth-guest" onclick="guestMode()">المتابعة بدون حساب 👤</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <!-- Sidebar -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebarAvatar">U</div>
+        <div>
+          <div class="sidebar-name" id="sidebarName">المستخدم</div>
+          <div class="sidebar-email" id="sidebarEmail">guest@app.com</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="navigate('home');closeSidebar()">
+        <span class="nav-icon">🏠</span>
+        <span id="nav1">الرئيسية</span>
+      </div>
+      <div class="nav-item" onclick="navigate('clients');closeSidebar()">
+        <span class="nav-icon">👥</span>
+        <span id="nav2">سجل الدين</span>
+      </div>
+      <div class="nav-item" onclick="navigate('settings');closeSidebar()">
+        <span class="nav-icon">⚙️</span>
+        <span id="nav3">الإعدادات</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()" id="logoutBtn">🚪 تسجيل الخروج</button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-actions">
+      <button class="header-btn" onclick="openSidebar()">☰</button>
+    </div>
+    <div class="header-title" id="headerTitle">الرئيسية</div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="navigate('settings')">⚙️</button>
+    </div>
+  </div>
+
+  <!-- HOME PAGE -->
+  <div class="page active" id="page-home">
+    <!-- Gauge Section -->
+    <div class="gauge-section">
+      <div class="gauge-title">📊 <span id="gaugeTitle">تحليل سجل الديون: تحليل إشارة الدين</span></div>
+      <div class="gauge-container">
+        <div class="gauge-wrapper">
+          <svg class="gauge-svg" viewBox="0 0 220 130">
+            <!-- Background arc -->
+            <path d="M 20 120 A 90 90 0 0 1 200 120" fill="none" stroke="#e2e8f0" stroke-width="22" stroke-linecap="round"/>
+            <!-- Danger zone (red) -->
+            <path d="M 20 120 A 90 90 0 0 1 65 42" fill="none" stroke="#ef4444" stroke-width="22" stroke-linecap="round"/>
+            <!-- Warning zone (orange) -->
+            <path d="M 65 42 A 90 90 0 0 1 110 25" fill="none" stroke="#f97316" stroke-width="22" stroke-linecap="round"/>
+            <!-- Good zone (green) -->
+            <path d="M 110 25 A 90 90 0 0 1 155 42" fill="none" stroke="#22c55e" stroke-width="22" stroke-linecap="round"/>
+            <!-- Excellent zone (dark green) -->
+            <path d="M 155 42 A 90 90 0 0 1 200 120" fill="none" stroke="#16a34a" stroke-width="22" stroke-linecap="round"/>
+            <!-- Needle -->
+            <g id="gaugeNeedle" style="transform-origin: 110px 120px; transform: rotate(-80deg); transition: transform 1.5s cubic-bezier(0.4,0,0.2,1);">
+              <line x1="110" y1="120" x2="110" y2="50" stroke="#1a56db" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="110" cy="120" r="8" fill="#1a56db"/>
+              <circle cx="110" cy="120" r="4" fill="white"/>
+            </g>
+          </svg>
+          <div class="gauge-center-text">
+            <div class="gauge-percent" id="gaugePercent">0%</div>
+            <div class="gauge-label" id="gaugeText">إشارة تحصيل الدين</div>
+          </div>
+        </div>
+
+        <!-- Sub type gauges -->
+        <div class="sub-gauges" id="subGauges">
+          <div class="sub-gauge-card">
+            <div class="sub-gauge-name">📦 إيكو</div>
+            <div class="sub-gauge-bar"><div class="sub-gauge-fill eco-dot" id="ecoBar" style="width:0%"></div></div>
+            <div class="sub-gauge-val" id="ecoVal" style="color:#16a34a">0</div>
+          </div>
+          <div class="sub-gauge-card">
+            <div class="sub-gauge-name">💎 بلص</div>
+            <div class="sub-gauge-bar"><div class="sub-gauge-fill plus-dot" id="plusBar" style="width:0%"></div></div>
+            <div class="sub-gauge-val" id="plusVal" style="color:#1d4ed8">0</div>
+          </div>
+          <div class="sub-gauge-card">
+            <div class="sub-gauge-name">⭐ ستندر</div>
+            <div class="sub-gauge-bar"><div class="sub-gauge-fill standard-dot" id="stdBar" style="width:0%"></div></div>
+            <div class="sub-gauge-val" id="stdVal" style="color:#f59e0b">0</div>
+          </div>
+          <div class="sub-gauge-card">
+            <div class="sub-gauge-name">🛸 واصل</div>
+            <div class="sub-gauge-bar"><div class="sub-gauge-fill wasil-dot" id="wasilBar" style="width:0%"></div></div>
+            <div class="sub-gauge-val" id="wasilVal" style="color:#7c3aed">0</div>
+          </div>
+        </div>
+
+        <div class="gauge-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div><span id="leg1">خطر</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div><span id="leg2">تحذير</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div><span id="leg3">جيد</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div><span id="leg4">ممتاز</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card" style="border-right: 4px solid #ef4444;">
+        <div class="stat-icon">💰</div>
+        <div class="stat-label" id="s1">إجمالي الديون القائمة</div>
+        <div class="stat-value" id="totalDebtStat">0</div>
+        <div class="stat-sub" id="s1sub">دينار</div>
+      </div>
+      <div class="stat-card" style="border-right: 4px solid #10b981;">
+        <div class="stat-icon">✅</div>
+        <div class="stat-label" id="s2">المبالغ المحصلة (هذا الشهر)</div>
+        <div class="stat-value" id="collectedStat">0</div>
+        <div class="stat-sub" id="s2sub">دينار</div>
+      </div>
+      <div class="stat-card" style="border-right: 4px solid #3b82f6;">
+        <div class="stat-icon">👥</div>
+        <div class="stat-label" id="s3">عدد المدينين</div>
+        <div class="stat-value" id="clientCountStat">0</div>
+        <div class="stat-sub" id="s3sub">نشط: <span id="activeCount">0</span>، منتهي: <span id="expiredCount">0</span></div>
+      </div>
+      <div class="stat-card" style="border-right: 4px solid #f59e0b;" id="alertsCard">
+        <div class="stat-icon">🔔</div>
+        <div class="stat-label" id="s4">إخطارات جديدة</div>
+        <div class="stat-value" id="alertCountStat">0</div>
+        <div class="stat-sub" id="alertsPreview"></div>
+      </div>
+    </div>
+
+    <!-- Alerts -->
+    <div class="alerts-section" id="alertsList"></div>
+  </div>
+
+  <!-- CLIENTS PAGE -->
+  <div class="page" id="page-clients">
+    <div class="search-bar-wrap">
+      <input class="search-bar" type="text" id="searchInput" placeholder="بحث عن عميل..." oninput="filterClients()">
+    </div>
+    <div class="filter-chips" id="filterChips">
+      <button class="chip active" onclick="setFilter('all')">🌐 الكل</button>
+      <button class="chip" onclick="setFilter('eco')">📦 إيكو</button>
+      <button class="chip" onclick="setFilter('plus')">💎 بلص</button>
+      <button class="chip" onclick="setFilter('standard')">⭐ ستندر</button>
+      <button class="chip" onclick="setFilter('wasil')">🛸 واصل</button>
+      <button class="chip" onclick="setFilter('due')">⏳ آجل</button>
+    </div>
+    <div class="client-list" id="clientList"></div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <div class="settings-section">
+      <div class="settings-item">
+        <span class="settings-item-label">🌙 <span id="set1">الوضع الليلي</span></span>
+        <div class="toggle" id="darkToggle" onclick="toggleDark()"></div>
+      </div>
+      <div class="settings-item">
+        <span class="settings-item-label">🔔 <span id="set2">الإشعارات</span></span>
+        <div class="toggle on" id="notifToggle" onclick="toggleNotif()"></div>
+      </div>
+      <div class="settings-item">
+        <span class="settings-item-label">💾 <span id="set3">النسخ الاحتياطي</span></span>
+        <div class="toggle" id="backupToggle" onclick="toggleBackup()"></div>
+      </div>
+      <div class="settings-item">
+        <span class="settings-item-label">🌐 <span id="set4">اللغة</span></span>
+        <div class="lang-selector">
+          <button class="lang-btn active" id="langAr" onclick="setLang('ar')">عربي</button>
+          <button class="lang-btn" id="langEn" onclick="setLang('en')">English</button>
+        </div>
+      </div>
+      <div class="settings-item">
+        <span class="settings-item-label">📊 <span id="set5">إجمالي السجلات</span></span>
+        <span style="font-weight:700;color:var(--primary)" id="totalRecords">0</span>
+      </div>
+    </div>
+    <button class="danger-btn" onclick="clearAll()">🗑️ <span id="clearBtn">مسح جميع السجلات</span></button>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" onclick="navigate('home')" id="navHome">
+      <span class="nav-icon-b">🏠</span>
+      <span id="nb1">الرئيسية</span>
+    </button>
+    <button class="nav-btn" onclick="navigate('clients')" id="navClients">
+      <span class="nav-icon-b">👥</span>
+      <span id="nb2">العملاء</span>
+    </button>
+    <button class="nav-btn" onclick="navigate('settings')" id="navSettings">
+      <span class="nav-icon-b">⚙️</span>
+      <span id="nb3">الإعدادات</span>
+    </button>
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" id="fabBtn" onclick="openAddModal()">+</button>
+</div>
+
+<!-- CLIENT PROFILE -->
+<div id="profilePage">
+  <div class="profile-header">
+    <button class="profile-back" onclick="closeProfile()">←</button>
+    <div class="profile-user-info">
+      <div class="profile-avatar" id="profileAvatar">A</div>
+      <div>
+        <div class="profile-name" id="profileName">-</div>
+        <div class="profile-phone" id="profilePhone">-</div>
+        <div class="profile-sub-tag" id="profileSubTag">-</div>
+      </div>
+    </div>
+  </div>
+  <div class="profile-actions">
+    <button class="profile-action-btn btn-call" id="btnCall" onclick="callClient()">📞 <span id="pa1">اتصال</span></button>
+    <button class="profile-action-btn btn-whatsapp" onclick="whatsappClient()">💬 <span id="pa2">واتساب</span></button>
+    <button class="profile-action-btn btn-edit" onclick="editClient()">✏️ <span id="pa3">تعديل</span></button>
+  </div>
+  <div class="profile-body">
+    <div class="section-title">
+      <span>📋 <span id="transTitle">سجل المعاملات</span></span>
+    </div>
+    <div class="transactions-table">
+      <div class="table-header">
+        <span id="th1">التاريخ</span>
+        <span id="th2">البيان</span>
+        <span id="th3">الاشتراك</span>
+        <span id="th4">دفع</span>
+        <span id="th5">آجل</span>
+        <span id="th6">الحالة</span>
+      </div>
+      <div id="transactionsList"></div>
+    </div>
+    <div class="total-debt-box">
+      <div>
+        <div class="total-debt-label">💳 <span id="totalDebtLabel">إجمالي الدين المتراكم</span></div>
+        <div class="total-debt-currency" id="totalDebtCurr">دينار</div>
+      </div>
+      <div class="total-debt-value" id="profileTotalDebt">0</div>
+    </div>
+    <!-- Add Transaction -->
+    <div class="add-trans-section">
+      <div class="section-title">➕ <span id="addTransTitle">إضافة سجل جديد</span></div>
+      <label class="form-label" id="subTypeLabel">نوع الاشتراك</label>
+      <select class="form-select" id="transSubType">
+        <option value="eco">📦 إيكو</option>
+        <option value="plus">💎 بلص</option>
+        <option value="standard">⭐ ستندر</option>
+        <option value="wasil">🛸 واصل</option>
+      </select>
+      <div class="form-row">
+        <div>
+          <label class="form-label" id="amountLabel">المبلغ (دينار)</label>
+          <input class="form-input" type="number" id="transAmount" placeholder="0" min="0">
+        </div>
+        <div>
+          <label class="form-label" id="noteLabel">البيان</label>
+          <input class="form-input" type="text" id="transNote" placeholder="اشتراك شهري...">
+        </div>
+      </div>
+      <div class="form-btns">
+        <button class="btn-due" onclick="addTransaction('due')">⏳ <span id="btnDue">لم يدفع (آجل)</span></button>
+        <button class="btn-paid" onclick="addTransaction('paid')">✅ <span id="btnPaid">تم الدفع (نقدي)</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CLIENT MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="addModalTitle">➕ إضافة عميل جديد</div>
+    <label class="form-label" id="clientNameLabel">الاسم</label>
+    <input class="form-input" type="text" id="newClientName" placeholder="اسم العميل">
+    <label class="form-label" id="clientPhoneLabel">رقم الهاتف</label>
+    <input class="form-input" type="tel" id="newClientPhone" placeholder="07xxxxxxxxx">
+    <label class="form-label" id="clientSubLabel">نوع الاشتراك</label>
+    <select class="form-select" id="newClientSub">
+      <option value="eco">📦 إيكو</option>
+      <option value="plus">💎 بلص</option>
+      <option value="standard">⭐ ستندر</option>
+      <option value="wasil">🛸 واصل</option>
+    </select>
+    <label class="form-label" id="clientNoteLabel">ملاحظة (اختياري)</label>
+    <input class="form-input" type="text" id="newClientNote" placeholder="ملاحظة...">
+    <button class="submit-btn" onclick="addClient()" id="addClientBtn">إضافة العميل</button>
+    <button style="width:100%;padding:13px;background:none;border:none;color:var(--text-secondary);font-family:var(--font);font-size:14px;cursor:pointer;margin-top:8px;" onclick="closeAddModal()" id="cancelBtn">إلغاء</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== DATA STORE =====
+let store = {
+  user: null,
+  clients: [],
+  settings: { dark: false, notifications: true, backup: false, lang: 'ar' }
+};
+
+const STORAGE_KEY = 'debtManagerData';
+const USERS_KEY = 'debtManagerUsers';
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+}
+
+function load() {
+  const d = localStorage.getItem(STORAGE_KEY);
+  if (d) {
+    const parsed = JSON.parse(d);
+    store.clients = parsed.clients || [];
+    store.settings = { ...store.settings, ...(parsed.settings || {}) };
+    store.user = parsed.user || null;
+  }
+}
+
+function getUsers() {
+  const u = localStorage.getItem(USERS_KEY);
+  return u ? JSON.parse(u) : [];
+}
+function saveUsers(users) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+// ===== LANGUAGE =====
+const T = {
+  ar: {
+    appTitle: 'سجل ديون الإنترنت',
+    appSub: 'إدارة ذكية لسجلات العملاء',
+    loginTab: 'تسجيل الدخول', registerTab: 'إنشاء حساب',
+    authTitle: 'سجل الديون', authSub: 'إدارة اشتراكات الإنترنت',
+    emailPh: 'البريد الإلكتروني', passPh: 'كلمة المرور',
+    namePh: 'الاسم الكامل',
+    loginBtn: 'تسجيل الدخول', registerBtn: 'إنشاء الحساب',
+    guestBtn: 'المتابعة بدون حساب 👤',
+    gaugeTitle: 'تحليل سجل الديون: تحليل إشارة الدين',
+    s1: 'إجمالي الديون القائمة', s2: 'المبالغ المحصلة (هذا الشهر)',
+    s3: 'عدد المدينين', s4: 'إخطارات جديدة',
+    s1sub: 'دينار', s2sub: 'دينار',
+    s3sub: 'نشط: ', expired: '، منتهي: ',
+    nav1: 'الرئيسية', nav2: 'سجل الدين', nav3: 'الإعدادات',
+    nb1: 'الرئيسية', nb2: 'العملاء', nb3: 'الإعدادات',
+    leg1: 'خطر', leg2: 'تحذير', leg3: 'جيد', leg4: 'ممتاز',
+    set1: 'الوضع الليلي', set2: 'الإشعارات', set3: 'النسخ الاحتياطي',
+    set4: 'اللغة', set5: 'إجمالي السجلات',
+    clearBtn: 'مسح جميع السجلات',
+    logoutBtn: '🚪 تسجيل الخروج',
+    pa1: 'اتصال', pa2: 'واتساب', pa3: 'تعديل',
+    transTitle: 'سجل المعاملات',
+    th1: 'التاريخ', th2: 'البيان', th3: 'الاشتراك',
+    th4: 'دفع', th5: 'آجل', th6: 'الحالة',
+    totalDebtLabel: 'إجمالي الدين المتراكم', totalDebtCurr: 'دينار',
+    addTransTitle: 'إضافة سجل جديد', subTypeLabel: 'نوع الاشتراك',
+    amountLabel: 'المبلغ (دينار)', noteLabel: 'البيان',
+    btnDue: 'لم يدفع (آجل)', btnPaid: 'تم الدفع (نقدي)',
+    addModalTitle: '➕ إضافة عميل جديد',
+    clientNameLabel: 'الاسم', clientPhoneLabel: 'رقم الهاتف',
+    clientSubLabel: 'نوع الاشتراك', clientNoteLabel: 'ملاحظة (اختياري)',
+    addClientBtn: 'إضافة العميل', cancelBtn: 'إلغاء',
+    searchPh: 'بحث عن عميل...',
+    gaugeText: 'إشارة تحصيل الدين',
+    paid: 'مدفوع', due: 'آجل',
+    headerHome: 'الرئيسية', headerClients: 'سجل الدين', headerSettings: 'الإعدادات',
+    cleared: 'تم مسح جميع السجلات', clientAdded: 'تم إضافة العميل',
+    transAdded: 'تم إضافة المعاملة', fillAll: 'يرجى ملء جميع الحقول',
+    confirmClear: 'هل تريد مسح جميع السجلات؟',
+    editTitle: 'تعديل بيانات العميل', editBtn: 'حفظ التعديلات',
+  },
+  en: {
+    appTitle: 'Internet Debt Manager',
+    appSub: 'Smart client records management',
+    loginTab: 'Login', registerTab: 'Register',
+    authTitle: 'Debt Manager', authSub: 'Internet subscription management',
+    emailPh: 'Email address', passPh: 'Password',
+    namePh: 'Full name',
+    loginBtn: 'Login', registerBtn: 'Create Account',
+    guestBtn: 'Continue as Guest 👤',
+    gaugeTitle: 'Debt Analysis: Collection Signal',
+    s1: 'Total Outstanding Debts', s2: 'Collected This Month',
+    s3: 'Number of Debtors', s4: 'New Alerts',
+    s1sub: 'IQD', s2sub: 'IQD',
+    s3sub: 'Active: ', expired: ', Expired: ',
+    nav1: 'Home', nav2: 'Debt Records', nav3: 'Settings',
+    nb1: 'Home', nb2: 'Clients', nb3: 'Settings',
+    leg1: 'Danger', leg2: 'Warning', leg3: 'Good', leg4: 'Excellent',
+    set1: 'Dark Mode', set2: 'Notifications', set3: 'Backup',
+    set4: 'Language', set5: 'Total Records',
+    clearBtn: 'Clear All Records',
+    logoutBtn: '🚪 Logout',
+    pa1: 'Call', pa2: 'WhatsApp', pa3: 'Edit',
+    transTitle: 'Transaction History',
+    th1: 'Date', th2: 'Note', th3: 'Subscription',
+    th4: 'Paid', th5: 'Due', th6: 'Status',
+    totalDebtLabel: 'Total Accumulated Debt', totalDebtCurr: 'IQD',
+    addTransTitle: 'Add New Record', subTypeLabel: 'Subscription Type',
+    amountLabel: 'Amount (IQD)', noteLabel: 'Note',
+    btnDue: 'Not Paid (Due) ⏳', btnPaid: 'Cash Paid ✅',
+    addModalTitle: '➕ Add New Client',
+    clientNameLabel: 'Name', clientPhoneLabel: 'Phone Number',
+    clientSubLabel: 'Subscription Type', clientNoteLabel: 'Note (optional)',
+    addClientBtn: 'Add Client', cancelBtn: 'Cancel',
+    searchPh: 'Search client...',
+    gaugeText: 'Debt Collection Signal',
+    paid: 'Paid', due: 'Due',
+    headerHome: 'Home', headerClients: 'Debt Records', headerSettings: 'Settings',
+    cleared: 'All records cleared', clientAdded: 'Client added',
+    transAdded: 'Transaction added', fillAll: 'Please fill all fields',
+    confirmClear: 'Clear all records?',
+    editTitle: 'Edit Client', editBtn: 'Save Changes',
+  }
+};
+
+function t(key) { return T[store.settings.lang][key] || key; }
+
+function applyLang() {
+  const lang = store.settings.lang;
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+  // Auth
+  const li = T[lang];
+  document.getElementById('splashTitle').textContent = li.appTitle;
+  document.getElementById('splashSub').textContent = li.appSub;
+  document.getElementById('authTitle').textContent = li.authTitle;
+  document.getElementById('authSub').textContent = li.authSub;
+  document.getElementById('loginTab').textContent = li.loginTab;
+  document.getElementById('registerTab').textContent = li.registerTab;
+  document.getElementById('loginEmail').placeholder = li.emailPh;
+  document.getElementById('loginPassword').placeholder = li.passPh;
+  document.getElementById('regEmail').placeholder = li.emailPh;
+  document.getElementById('regPassword').placeholder = li.passPh;
+  document.getElementById('regName').placeholder = li.namePh;
+
+  // Nav
+  document.getElementById('nav1').textContent = li.nav1;
+  document.getElementById('nav2').textContent = li.nav2;
+  document.getElementById('nav3').textContent = li.nav3;
+  document.getElementById('nb1').textContent = li.nb1;
+  document.getElementById('nb2').textContent = li.nb2;
+  document.getElementById('nb3').textContent = li.nb3;
+  document.getElementById('leg1').textContent = li.leg1;
+  document.getElementById('leg2').textContent = li.leg2;
+  document.getElementById('leg3').textContent = li.leg3;
+  document.getElementById('leg4').textContent = li.leg4;
+  document.getElementById('gaugeTitle').textContent = li.gaugeTitle;
+  document.getElementById('gaugeText').textContent = li.gaugeText;
+  document.getElementById('s1').textContent = li.s1;
+  document.getElementById('s2').textContent = li.s2;
+  document.getElementById('s3').textContent = li.s3;
+  document.getElementById('s4').textContent = li.s4;
+  document.getElementById('s1sub').textContent = li.s1sub;
+  document.getElementById('s2sub').textContent = li.s2sub;
+  document.getElementById('set1').textContent = li.set1;
+  document.getElementById('set2').textContent = li.set2;
+  document.getElementById('set3').textContent = li.set3;
+  document.getElementById('set4').textContent = li.set4;
+  document.getElementById('set5').textContent = li.set5;
+  document.getElementById('clearBtn').textContent = li.clearBtn;
+  document.getElementById('logoutBtn').textContent = li.logoutBtn;
+  document.getElementById('pa1').textContent = li.pa1;
+  document.getElementById('pa2').textContent = li.pa2;
+  document.getElementById('pa3').textContent = li.pa3;
+  document.getElementById('transTitle').textContent = li.transTitle;
+  document.getElementById('th1').textContent = li.th1;
+  document.getElementById('th2').textContent = li.th2;
+  document.getElementById('th3').textContent = li.th3;
+  document.getElementById('th4').textContent = li.th4;
+  document.getElementById('th5').textContent = li.th5;
+  document.getElementById('th6').textContent = li.th6;
+  document.getElementById('totalDebtLabel').textContent = li.totalDebtLabel;
+  document.getElementById('totalDebtCurr').textContent = li.totalDebtCurr;
+  document.getElementById('addTransTitle').textContent = li.addTransTitle;
+  document.getElementById('subTypeLabel').textContent = li.subTypeLabel;
+  document.getElementById('amountLabel').textContent = li.amountLabel;
+  document.getElementById('noteLabel').textContent = li.noteLabel;
+  document.getElementById('btnDue').textContent = li.btnDue;
+  document.getElementById('btnPaid').textContent = li.btnPaid;
+  document.getElementById('addModalTitle').textContent = li.addModalTitle;
+  document.getElementById('clientNameLabel').textContent = li.clientNameLabel;
+  document.getElementById('clientPhoneLabel').textContent = li.clientPhoneLabel;
+  document.getElementById('clientSubLabel').textContent = li.clientSubLabel;
+  document.getElementById('clientNoteLabel').textContent = li.clientNoteLabel;
+  document.getElementById('addClientBtn').textContent = li.addClientBtn;
+  document.getElementById('cancelBtn').textContent = li.cancelBtn;
+  document.getElementById('searchInput').placeholder = li.searchPh;
+  document.getElementById('langAr').classList.toggle('active', lang === 'ar');
+  document.getElementById('langEn').classList.toggle('active', lang === 'en');
+}
+
+// ===== AUTH =====
+function switchTab(tab) {
+  document.getElementById('loginTab').classList.toggle('active', tab === 'login');
+  document.getElementById('registerTab').classList.toggle('active', tab === 'register');
+  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('authError').style.display = 'none';
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function login() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  if (!email || !pass) { showAuthError(t('fillAll')); return; }
+  const users = getUsers();
+  const user = users.find(u => u.email === email && u.password === pass);
+  if (!user) { showAuthError('البريد أو كلمة المرور غير صحيحة'); return; }
+  store.user = { name: user.name, email: user.email };
+  save();
+  enterApp();
+}
+
+function register() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPassword').value;
+  if (!name || !email || !pass) { showAuthError(t('fillAll')); return; }
+  const users = getUsers();
+  if (users.find(u => u.email === email)) { showAuthError('البريد مستخدم مسبقاً'); return; }
+  users.push({ name, email, password: pass });
+  saveUsers(users);
+  store.user = { name, email };
+  save();
+  enterApp();
+}
+
+function guestMode() {
+  store.user = { name: 'ضيف', email: 'guest@app.local' };
+  save();
+  enterApp();
+}
+
+function logout() {
+  store.user = null;
+  save();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('authScreen').style.display = 'flex';
+  closeSidebar();
+}
+
+function enterApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  updateSidebarUser();
+  updateStats();
+  renderClients();
+  applySettings();
+}
+
+function updateSidebarUser() {
+  if (!store.user) return;
+  document.getElementById('sidebarName').textContent = store.user.name;
+  document.getElementById('sidebarEmail').textContent = store.user.email;
+  document.getElementById('sidebarAvatar').textContent = store.user.name[0].toUpperCase();
+}
+
+// ===== NAVIGATION =====
+let currentPage = 'home';
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav' + page[0].toUpperCase() + page.slice(1)).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  currentPage = page;
+  const titles = { home: t('headerHome'), clients: t('headerClients'), settings: t('headerSettings') };
+  document.getElementById('headerTitle').textContent = titles[page] || page;
+  document.getElementById('fabBtn').style.display = page === 'clients' ? 'flex' : 'none';
+  if (page === 'home') updateStats();
+  if (page === 'clients') renderClients();
+  if (page === 'settings') {
+    document.getElementById('totalRecords').textContent = store.clients.reduce((s, c) => s + (c.transactions || []).length, 0);
+  }
+}
+
+// ===== SIDEBAR =====
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').style.display = 'block';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').style.display = 'none';
+}
+
+// ===== STATS & GAUGE =====
+function updateStats() {
+  const clients = store.clients;
+  let totalDebt = 0, collected = 0, activeCount = 0, expiredCount = 0;
+  const now = new Date();
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
+  const subCounts = { eco: 0, plus: 0, standard: 0, wasil: 0 };
+  const dueClients = [];
+
+  clients.forEach(c => {
+    let clientDebt = 0;
+    (c.transactions || []).forEach(tx => {
+      if (tx.status === 'due') {
+        clientDebt += tx.amount;
+        totalDebt += tx.amount;
+      } else {
+        const d = new Date(tx.date);
+        if (d.getMonth() === thisMonth && d.getFullYear() === thisYear) collected += tx.amount;
+      }
+    });
+    if (clientDebt > 0) { activeCount++; dueClients.push(c); }
+    else expiredCount++;
+    if (c.subType in subCounts) subCounts[c.subType]++;
+  });
+
+  document.getElementById('totalDebtStat').textContent = totalDebt.toLocaleString();
+  document.getElementById('collectedStat').textContent = collected.toLocaleString();
+  document.getElementById('clientCountStat').textContent = clients.length;
+  document.getElementById('activeCount').textContent = activeCount;
+  document.getElementById('expiredCount').textContent = expiredCount;
+  document.getElementById('alertCountStat').textContent = dueClients.length;
+
+  // Alerts preview
+  const preview = dueClients.slice(0, 3).map(c => `• ${c.name}`).join('\n');
+  document.getElementById('alertsPreview').textContent = preview;
+
+  // Build alerts list
+  const alertsEl = document.getElementById('alertsList');
+  alertsEl.innerHTML = '';
+  dueClients.slice(0, 5).forEach(c => {
+    const debt = (c.transactions || []).filter(t => t.status === 'due').reduce((s, t) => s + t.amount, 0);
+    alertsEl.innerHTML += `
+      <div class="alert-item" onclick="openProfile('${c.id}')">
+        <div class="alert-icon">🔔</div>
+        <div>
+          <div class="alert-text">${store.settings.lang === 'ar' ? 'تذكير' : 'Reminder'}: ${c.name} — ${debt.toLocaleString()} ${t('s1sub')}</div>
+          <div class="alert-time">${store.settings.lang === 'ar' ? 'اشتراك' : 'Subscription'}: ${getSubLabel(c.subType)}</div>
+        </div>
+      </div>`;
+  });
+
+  // Gauge
+  const total = collected + totalDebt;
+  const pct = total === 0 ? 0 : Math.round((collected / total) * 100);
+  document.getElementById('gaugePercent').textContent = pct + '%';
+  // Rotate needle: -90 to +90 degrees, map 0-100% to that range
+  const deg = -90 + (pct / 100) * 180;
+  document.getElementById('gaugeNeedle').style.transform = `rotate(${deg}deg)`;
+
+  // Sub gauges
+  const maxSub = Math.max(...Object.values(subCounts), 1);
+  ['eco','plus','standard','wasil'].forEach(k => {
+    const pct = Math.round((subCounts[k] / clients.length || 0) * 100) || 0;
+    document.getElementById(k + 'Bar').style.width = pct + '%';
+    document.getElementById(k + 'Val').textContent = subCounts[k];
+  });
+}
+
+function getSubLabel(type) {
+  return { eco: '📦 إيكو', plus: '💎 بلص', standard: '⭐ ستندر', wasil: '🛸 واصل' }[type] || type;
+}
+function getSubClass(type) {
+  return { eco: 'eco', plus: 'plus', standard: 'standard', wasil: 'wasil' }[type] || '';
+}
+function getAvatarColor(type) {
+  return { eco: '#16a34a', plus: '#1d4ed8', standard: '#f59e0b', wasil: '#7c3aed' }[type] || '#64748b';
+}
+
+// ===== CLIENTS =====
+let currentFilter = 'all';
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  renderClients();
+}
+
+function filterClients() { renderClients(); }
+
+function renderClients() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  let list = store.clients.filter(c => {
+    const match = c.name.toLowerCase().includes(search) || (c.phone || '').includes(search);
+    if (!match) return false;
+    if (currentFilter === 'all') return true;
+    if (currentFilter === 'due') {
+      return (c.transactions || []).some(t => t.status === 'due');
+    }
+    return c.subType === currentFilter;
+  });
+
+  const el = document.getElementById('clientList');
+  if (list.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>${store.settings.lang === 'ar' ? 'لا يوجد عملاء' : 'No clients found'}</p></div>`;
+    return;
+  }
+
+  el.innerHTML = list.map(c => {
+    const debt = (c.transactions || []).filter(t => t.status === 'due').reduce((s, t) => s + t.amount, 0);
+    const hasDue = debt > 0;
+    return `
+    <div class="client-card" onclick="openProfile('${c.id}')">
+      <div class="client-avatar" style="background:${getAvatarColor(c.subType)}">
+        ${c.name[0].toUpperCase()}
+        <div class="client-status-dot ${hasDue ? 'due-dot' : 'paid-dot'}"></div>
+      </div>
+      <div class="client-info">
+        <div class="client-name">${c.name}</div>
+        <div class="client-phone">${c.phone || '—'}</div>
+        <div class="client-meta">
+          <span class="client-tag ${getSubClass(c.subType)}">${getSubLabel(c.subType)}</span>
+          ${hasDue ? `<span class="client-tag status-due">⏳ ${t('due')}</span>` : `<span class="client-tag status-paid">✅ ${t('paid')}</span>`}
+        </div>
+      </div>
+      <div class="client-amount">
+        <div class="client-debt" style="color:${hasDue ? 'var(--danger)' : 'var(--success)'}">${debt.toLocaleString()}</div>
+        <div class="client-debt-label">${t('s1sub')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== ADD CLIENT =====
+function openAddModal() {
+  document.getElementById('addModal').classList.add('open');
+  editingClientId = null;
+  document.getElementById('addModalTitle').textContent = t('addModalTitle');
+  document.getElementById('addClientBtn').textContent = t('addClientBtn');
+  document.getElementById('newClientName').value = '';
+  document.getElementById('newClientPhone').value = '';
+  document.getElementById('newClientNote').value = '';
+}
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('open');
+}
+
+let editingClientId = null;
+function addClient() {
+  const name = document.getElementById('newClientName').value.trim();
+  const phone = document.getElementById('newClientPhone').value.trim();
+  const sub = document.getElementById('newClientSub').value;
+  const note = document.getElementById('newClientNote').value.trim();
+  if (!name) { showToast(t('fillAll')); return; }
+
+  if (editingClientId) {
+    const c = store.clients.find(c => c.id === editingClientId);
+    if (c) { c.name = name; c.phone = phone; c.subType = sub; c.note = note; }
+  } else {
+    store.clients.push({ id: Date.now().toString(), name, phone, subType: sub, note, transactions: [] });
+  }
+  save();
+  closeAddModal();
+  renderClients();
+  updateStats();
+  showToast(editingClientId ? t('editBtn') : t('clientAdded'));
+  editingClientId = null;
+}
+
+// ===== PROFILE =====
+let currentClientId = null;
+function openProfile(id) {
+  currentClientId = id;
+  const c = store.clients.find(c => c.id === id);
+  if (!c) return;
+  document.getElementById('profilePage').classList.add('open');
+  document.getElementById('profileName').textContent = c.name;
+  document.getElementById('profilePhone').textContent = c.phone || '—';
+  document.getElementById('profileSubTag').textContent = getSubLabel(c.subType);
+  document.getElementById('profileAvatar').textContent = c.name[0].toUpperCase();
+  document.getElementById('profileAvatar').style.background = getAvatarColor(c.subType);
+  renderTransactions(c);
+}
+function closeProfile() {
+  document.getElementById('profilePage').classList.remove('open');
+  currentClientId = null;
+}
+function callClient() {
+  const c = store.clients.find(c => c.id === currentClientId);
+  if (c && c.phone) window.location.href = 'tel:' + c.phone;
+}
+function whatsappClient() {
+  const c = store.clients.find(c => c.id === currentClientId);
+  if (c && c.phone) window.open('https://wa.me/' + c.phone.replace(/\D/g, ''));
+}
+function editClient() {
+  const c = store.clients.find(c => c.id === currentClientId);
+  if (!c) return;
+  editingClientId = c.id;
+  document.getElementById('newClientName').value = c.name;
+  document.getElementById('newClientPhone').value = c.phone || '';
+  document.getElementById('newClientSub').value = c.subType;
+  document.getElementById('newClientNote').value = c.note || '';
+  document.getElementById('addModalTitle').textContent = t('editTitle');
+  document.getElementById('addClientBtn').textContent = t('editBtn');
+  document.getElementById('addModal').classList.add('open');
+}
+
+function renderTransactions(c) {
+  const el = document.getElementById('transactionsList');
+  const txs = (c.transactions || []).slice().reverse();
+  if (txs.length === 0) {
+    el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px">${store.settings.lang === 'ar' ? 'لا توجد معاملات' : 'No transactions'}</div>`;
+  } else {
+    el.innerHTML = txs.map(tx => `
+      <div class="table-row">
+        <span>${tx.date}</span>
+        <span>${tx.note || '—'}</span>
+        <span>${getSubLabel(tx.subType)}</span>
+        <span>${tx.status === 'paid' ? tx.amount.toLocaleString() : '—'}</span>
+        <span>${tx.status === 'due' ? tx.amount.toLocaleString() : '—'}</span>
+        <span><span class="status-badge ${tx.status === 'paid' ? 'status-paid' : 'status-due'}">${tx.status === 'paid' ? t('paid') : t('due')}</span></span>
+      </div>`).join('');
+  }
+  const totalDebt = (c.transactions || []).filter(t => t.status === 'due').reduce((s, t) => s + t.amount, 0);
+  document.getElementById('profileTotalDebt').textContent = totalDebt.toLocaleString();
+  document.getElementById('transSubType').value = c.subType || 'eco';
+}
+
+function addTransaction(status) {
+  const amount = parseFloat(document.getElementById('transAmount').value);
+  const note = document.getElementById('transNote').value.trim();
+  const subType = document.getElementById('transSubType').value;
+  if (!amount || amount <= 0) { showToast(t('fillAll')); return; }
+  const c = store.clients.find(c => c.id === currentClientId);
+  if (!c) return;
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
+  c.transactions.push({ id: Date.now().toString(), date: dateStr, note, subType, amount, status });
+  save();
+  renderTransactions(c);
+  updateStats();
+  document.getElementById('transAmount').value = '';
+  document.getElementById('transNote').value = '';
+  showToast(t('transAdded'));
+}
+
+// ===== SETTINGS =====
+function applySettings() {
+  document.body.classList.toggle('dark', store.settings.dark);
+  document.getElementById('darkToggle').classList.toggle('on', store.settings.dark);
+  document.getElementById('notifToggle').classList.toggle('on', store.settings.notifications);
+  document.getElementById('backupToggle').classList.toggle('on', store.settings.backup);
+  applyLang();
+}
+
+function toggleDark() {
+  store.settings.dark = !store.settings.dark;
+  save();
+  applySettings();
+}
+function toggleNotif() {
+  store.settings.notifications = !store.settings.notifications;
+  save();
+  applySettings();
+}
+function toggleBackup() {
+  store.settings.backup = !store.settings.backup;
+  save();
+  applySettings();
+}
+function setLang(lang) {
+  store.settings.lang = lang;
+  save();
+  applySettings();
+  navigate(currentPage);
+  updateStats();
+  renderClients();
+}
+
+function clearAll() {
+  if (confirm(t('confirmClear'))) {
+    store.clients = [];
+    save();
+    renderClients();
+    updateStats();
+    showToast(t('cleared'));
+  }
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ===== INIT =====
+window.addEventListener('load', () => {
+  load();
+  applySettings();
+  setTimeout(() => {
+    document.getElementById('splash').style.opacity = '0';
+    setTimeout(() => {
+      document.getElementById('splash').style.display = 'none';
+      if (store.user) {
+        enterApp();
+      } else {
+        document.getElementById('authScreen').style.display = 'flex';
+      }
+    }, 500);
+  }, 2000);
+});
+</script>
+</body>
+</html>
